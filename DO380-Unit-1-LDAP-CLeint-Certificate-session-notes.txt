@@ -1,0 +1,152 @@
+#Quick Recap:-
+ - Oauth (as identity broker)
+ - Multiple IdP's - htpasswd, LDAP 
+ - LDAP sync 
+ - CLient Certificate 
+ - OpenIDConnect (OIDC)
+ 
+ 
+OCP
+ - baseDoamin- example.com 
+   clusterName- ocp4 
+  - API URL     - https://api.ocp4.example.com:6443 [cluster=ocp4; baseDOmain=example.com]   
+    Web Console - https://console-openshift-console.apps.ocp4.example.com 
+
+FQDN w.r.t DNS  
+ - master01-03.ocp4.example.com 
+ - worker01-03.ocp4.example.com 
+
+LDAP nodes:-
+   - idm.ocp4.example.com
+   - rhds.ocp4.example.com 
+   
+LDAP:-
+1st case-
+
+ ldapsearch :-
+ # ocp4.example.com
+ dc=ocp4,dc=example,dc=com 
+ accounts
+ cn=accounts,dc=ocp4,dc=example,dc=com
+
+ LDAP node - idm.ocp4.example.com 
+ bindDN - uid=admin,cn=users,cn=accounts,dc=ocp4,dc=example,dc=com 
+ LDAP URL - ldaps://idm.ocp4.example.com/cn=users,cn=accounts,dc=ocp4,dc=example,dc=com?uid 
+ or 
+ LDAP URL - ldaps://idm.ocp4.example.com/cn=accounts,dc=ocp4,dc=example,dc=com?uid 
+ Filter Query - Use uid as filter query.
+
+ 
+ 
+2nd case-
+ ldapsearch :-
+ # example.com
+ dc=example,dc=com 
+
+ LDAP node - rhds.ocp4.example.com 
+ bindDN - cn=Directory Manager
+ LDAP URL - ldaps://rhds.ocp4.example.com/dc=example,dc=com?uid 
+ Filter Query - Use uid as filter query.
+ 
+ 
+****************
+ ldapsearch :-
+ # ocp4.example.com
+ dc=ocp4,dc=example,dc=com 
+ 
+ accounts
+ cn=accounts,dc=ocp4,dc=example,dc=com 
+ 
+****************
+
+   domainX.example.com X=1
+   
+   ClusterName=domainX
+   baseDomain=example.com 
+   
+   rhds.domain10.example.com 
+   
+ LDAP URL - ldaps://idm.ocp4.example.com/cn=users,cn=accounts,dc=ocp4,dc=example,dc=com?uid 
+ LDAP URL - ldaps://idm.ocp4.example.com/cn=accounts,dc=ocp4,dc=example,dc=com?uid 
+ LDAP URL - ldaps://idm.ocp4.example.com/dc=ocp4,dc=example,dc=com?uid 
+ 
+ LDAP URL - ldaps://rhds.ocp4.example.com/dc=example,dc=com?uid 
+ LDAP URL - ldaps://rhds.ocp4.example.com/ou=people,dc=example,dc=com?uid 
+
+================================================
+1- Concepts - What is LDAP group Sycn?
+
+OCP cluster can connect to an external LDAP directory server (OpenLDAP,IDM,MS AD) 
+- WHy? to automatically import and keep user, groups membership syncronized.
+
+LDAP level 
+devops_grp 
+sre_grp
+book-app_grp 
+payment-app_grp 
+
+2- HOw it works (High Level FLow).
+- LDAP server - Maintains users,groups and relationship between users/groups.
+- OPenShift Oauth IdP- Handles user authetication against LDAP. 
+- Group Sync Controller - COnnect to LDAP server, reads groups and updates OPenShift's internal group abjects accordingly.
+Additionally 
+- Automation (cronjobs) - Keep sync LDAP and OCP cluster.
+
+3- Required COmponents:- To enable sync openshift required:-
+- Configuraiton file telling it how to connect to LDAP (LDAPSyncConfig).
+- ServiceAccount with required permission to perform sync.
+- A cluster role + role binding so the serviceAccount can create or update groups.
+- ConfigMap & Secret (bindPassword, LDAP certificate).
+- Cronjobs to schedule auto sync 
+
+----------------------
+LDAP uRL - ldaps://ip:389 or 636 
+Bind DN (cn=admin,dc=ocp4,dc=example,dc=com) & Password 
+CA certificate (LDAP)
+baseDN - ou=group,dc=ocp4,dc=example,dc=com 
+Filter - objectCLass=group 
+
+ldapsearch -D "cn=Directory Manager" -w redhatocp -H ldaps://rhds.ocp4.example.com
+
+
+===========
+apiVesion:
+kind:
+metadata:
+  name:
+  namespace:
+  labels:
+spec:
+----------------
+openssl 
+ - key.key 
+ - csr.csr 
+csr.yaml (oc explain csr.spec)
+oc apply csr.yaml 
+oc get csr 
+Approve this csr 
+
+oc get csr csrname -o yaml 
+
+Gather the certificate from here (It's also base64 encoded value)
+ value | base64 -d > crt.crt 
+ 
+ crt.crt 
+ csr.csr 
+ key.key 
+ csr.yaml (Done)
+ 
+ Now we will create kubeconfig file 
+ 
+ 
+ 
+
+
+ 
+
+
+
+
+
+
+
